@@ -25,12 +25,15 @@ ig
             checkAgainst: ig.Entity.TYPE.NONE,
             collides: ig.Entity.COLLIDES.PASSIVE,
             health: 300,
-            bounciness:.3,
+            bounciness: .3,
+            weapon: 0,
+            totalWeapons: 2,
+            activeWeapon: "EntityBullet",
             /*
-            invincible: true,
-            invincibleDelay: 2,
-            invincibleTimer: null,
-            */
+             invincible: true,
+             invincibleDelay: 2,
+             invincibleTimer: null,
+             */
             init: function (x, y, settings) {
                 this.parent(x, y, settings);
                 this.addAnim('idle', 1, [0]);
@@ -69,10 +72,24 @@ ig
                 // shoot
                 if (ig.input.pressed('shoot')) {
                     ig.mark('shoot');
-                    ig.game.spawnEntity( EntityBullet, this.pos.x, this.pos.y, {flip: this.flip});
+                    ig.game.spawnEntity(this.activeWeapon, this.pos.x, this.pos.y, {flip: this.flip});
+                }
+                this.parent();
+
+                if (ig.input.pressed('switch')) {
+                    this.weapon++;
+                    if (this.weapon >= this.totalWeapons)
+                        this.weapon = 0;
+                    switch(this.weapon) {
+                        case(0):
+                            this.activeWeapon = "EntityBullet";
+                            break;
+                        case(1):
+                            this.activeWeapon = "EntityGrenade";
+                            break;
+                    }
                 }
 
-                this.parent();
             }
         });
         /**
@@ -87,23 +104,55 @@ ig
             checkAgainst: ig.Entity.TYPE.B,
             collides: ig.Entity.COLLIDES.PASSIVE,
             init: function (x, y, settings) {
-                this.parent( x + (settings.flip ? -4 : 8), y+8, settings);
-                this.vel.x = this.accel.x = (settings.flip ? - this.maxVel.x : this.maxVel.x);
+                this.parent(x + (settings.flip ? -4 : 8), y + 8, settings);
+                this.vel.x = this.accel.x = (settings.flip ? -this.maxVel.x : this.maxVel.x);
                 this.addAnim('idle', 0.2, [0]);
             },
             handleMovementTrace: function (res) {
-                this.parent( res );
+                this.parent(res);
                 if (res.collision.x || res.collision.y) {
                     this.kill();
                 }
             },
-            check: function( other ) {
+            check: function (other) {
                 other.receiveDamage(5, this);
                 this.receiveDamage(10);
                 ig.mark('Zombie hit!', '#FF0000');
-
             }
-
+        });
+        /**
+         *
+         * @type {void|*}
+         */
+        EntityGrenade = ig.Entity.extend({
+            size: {x: 4, y: 4},
+            offset: {x: 2, y: 2},
+            animSheet: new ig.AnimationSheet('media/grenade.png', 8, 8),
+            type: ig.Entity.TYPE.NONE,
+            checkAgainst: ig.Entity.TYPE.BOTH,
+            collides: ig.Entity.COLLIDES.PASSIVE,
+            maxVel: {x: 200, y: 200},
+            bounciness: 0.6,
+            bounceCounter: 0,
+            init: function (x, y, settings) {
+                this.parent(x + (settings.flip ? -4 : 7), y, settings);
+                this.vel.x = (settings.flip ? -this.maxVel.x : this.maxVel.x);
+                this.vel.y = -(50 + (Math.random() * 100));
+                this.addAnim('idle', 0.2, [0, 1]);
+            },
+            handleMovementTrace: function (res) {
+                this.parent(res);
+                if (res.collision.x || res.collision.y) {
+                    // only bounce 3 times
+                    this.bounceCounter++;
+                    if (this.bounceCounter > 3)
+                        this.kill();
+                }
+            },
+            check: function (other) {
+                other.receiveDamage(10, this);
+                this.kill();
+            }
         });
 
     });

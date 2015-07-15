@@ -26,6 +26,7 @@ ig.module(
                 ig.input.bind(ig.KEY.RIGHT_ARROW, 'right');
                 ig.input.bind(ig.KEY.UP_ARROW, 'jump');
                 ig.input.bind(ig.KEY.SPACE, 'shoot');
+                ig.input.bind( ig.KEY.TAB, 'switch');
             },
             /**
              * Update all entities and backgroundMaps
